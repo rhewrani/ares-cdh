@@ -49,4 +49,35 @@ namespace ares {
                 return std::get<ParseError>(data);
             }
     };
+
+    struct OkVoid {};
+
+    template <>
+    class Result<void> {
+       private:
+            std::variant<OkVoid, ParseError> data;
+            Result() = default;
+       public:
+            static Result<void> ok() {
+                Result r;
+                r.data = OkVoid{};
+                return r;
+            }
+
+            static Result<void> err(ParseError e) {
+                Result r;
+                r.data = e;
+                return r;
+            }
+
+            bool is_ok() const { return std::holds_alternative<OkVoid>(data); }
+            bool is_err() const { return std::holds_alternative<ParseError>(data); }
+
+
+            ParseError error() const {
+                if (!is_err()) std::abort();
+
+                return std::get<ParseError>(data);
+            }
+    };
 }
