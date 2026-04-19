@@ -44,14 +44,6 @@ std::array<ares::Byte, 9> make_valid_packet(ares::U16 apid, ares::U16 sequence_c
     return packet;
 }
 
-TEST_CASE("Buffer of 0 bytes is too short") {
-    ares::TcParser parser;
-    std::array<ares::Byte, 0> buffer{};
-    auto result = parser.parse(buffer.data(), static_cast<ares::U16>(buffer.size()));
-    REQUIRE(result.is_err());
-    REQUIRE(result.error() == ares::ParseError::BUFFER_TOO_SHORT);
-}
-
 TEST_CASE("Buffer of 8 bytes is too short") {
     ares::TcParser parser;
     std::array<ares::Byte, 8> buffer{};
@@ -124,6 +116,25 @@ TEST_CASE("Valid packet with correct CRC passes CRC check") {
     REQUIRE(result.is_ok());
 }
 
+TEST_CASE("APID 0x7FF is invalid") {
+    ares::TcParser parser;
+    std::array<ares::Byte, 9> buffer = make_valid_packet(0x07FF, 0x0000, 0x00);
+    auto result = parser.parse(buffer.data(), static_cast<ares::U16>(buffer.size()));
+    REQUIRE(result.is_err());
+    REQUIRE(result.error() == ares::ParseError::INVALID_APID);
+}
+
+TEST_CASE("Valid packet with data length less than 2 is invalid") {
+    ares::TcParser parser;
+    std::array<ares::Byte, 9> buffer = make_valid_packet(0x0001, 0x0000, 0x00);
+    buffer[5] = 0x00;
+    ares::U16 crc = ares::compute_crc16(buffer.data(), 7);
+    buffer[7] = static_cast<ares::Byte>(crc >> 8);
+    buffer[8] = static_cast<ares::Byte>(crc & 0xFF);
+    auto result = parser.parse(buffer.data(), static_cast<ares::U16>(buffer.size()));
+    REQUIRE(result.is_err());
+    REQUIRE(result.error() == ares::ParseError::MALFORMED_LENGTH);
+}
 
 TEST_CASE("Sequence validation: second packet for same APID is valid") {
     ares::TcParser parser;

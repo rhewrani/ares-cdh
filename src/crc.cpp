@@ -4,9 +4,9 @@
 namespace ares {
     constexpr std::array<U16, 256> generate_crc_table() {
         std::array<U16, 256> table{};
-        for (size_t i = 0; i < 256; i++) {
+        for (U16 i = 0; i < 256; ++i) {
             U16 crc = static_cast<U16>(i << 8);
-            for (size_t j = 0; j < 8; j++) {
+            for (U8 j = 0; j < 8; j++) {
                 bool high_bit_set = (crc & 0x8000) != 0;
                 crc <<= 1;
                 if (high_bit_set) {

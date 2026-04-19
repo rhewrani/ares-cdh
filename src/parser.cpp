@@ -64,9 +64,14 @@ namespace ares {
 
         header.has_secondary = (buffer[0] >> 3) & 0x01;
         header.apid = static_cast<U16>((buffer[0] & 0x07) << 8 | buffer[1]);
+
+        if (header.apid == 0x7FF || header.apid >= MAX_APIDS) return Result<PrimaryHeader>::err(ParseError::INVALID_APID);
+
         header.sequence_flags = static_cast<SequenceFlags>((buffer[2] >> 6) & 0x03);
         header.sequence_count = static_cast<U16>((buffer[2] & 0x3F) << 8 | buffer[3]); // 14-bit mask makes sequence overflow impossible, so no need to check for it
         header.data_length = static_cast<U16>((buffer[4] << 8) | buffer[5]);
+
+        if (header.data_length < 2) return Result<PrimaryHeader>::err(ParseError::MALFORMED_LENGTH);
 
         return Result<PrimaryHeader>::ok(header);
 
@@ -93,9 +98,6 @@ namespace ares {
     Result<TcPacket> TcParser::build_packet(const PrimaryHeader& header, const Byte* buffer) {
         TcPacket packet;
 
-        // TODO: Implement extract_secondary_header() for full secondary header parsing.
-        // Currently assumes fixed 4-byte secondary header as placeholder.
-
         packet.primary_header = header;
         U8 add_secondary = static_cast<U8>(header.has_secondary ? 4 : 0);
         packet.payload = buffer + 6 + add_secondary; // + 6 because the first 6 bytes are the primary header
@@ -107,7 +109,7 @@ namespace ares {
 
     Result<TcPacket> TcParser::parse(const Byte* buffer, U16 length) {
         if (auto r = validate_length(buffer, length); r.is_err())
-            return Result<TcPacket>::err(r.error()); // Isn't this confusing? We're returnign a error but as an packet. Essentialy is_err() is false here even though it's an error
+            return Result<TcPacket>::err(r.error());
 
         if (auto r = validate_version(buffer); r.is_err())
             return Result<TcPacket>::err(r.error());
