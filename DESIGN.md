@@ -1,6 +1,4 @@
 # Architecture
-This aims to explain the architecture of this project
-
 ## Overview
 ```
 parser.hpp/cpp

@@ -121,6 +121,56 @@ cmake --build .
 
 ---
 
+## Integration
+
+### Prerequisites
+- CMake 3.16 or higher
+- C++17 compiler (GCC 10+, Clang 11+, MSVC 2019+)
+
+### Option A - CMake FetchContent (Recommended)
+
+CMakeLists.txt:
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(
+    ares_cdh
+    GIT_REPOSITORY https://github.com/rhewrani/ares_cdh
+    GIT_TAG        main
+)
+FetchContent_MakeAvailable(ares_cdh)
+
+target_link_libraries(your_target PRIVATE ares_cdh)
+```
+
+### Option B - Add As A Subdirectory
+
+If you've cloned the repository into your project:
+
+```cmake
+add_subdirectory(path/to/ares_cdh)
+target_link_libraries(your_target PRIVATE ares_cdh)
+```
+
+### Usage
+
+```cpp
+#include "ares/parser.hpp"
+
+ares::TcParser parser;
+auto result = parser.parse(buffer, length);
+
+if (result.is_ok()) {
+    const ares::TcPacket& pkt = result.value();
+    // use pkt.payload, pkt.payload_length, etc.
+} else {
+    ares::ParseError e = result.error();
+    // handle error
+}
+```
+
+---
+
 ## Known Limitations
 
 - Secondary header parsing not implemented - format is 
