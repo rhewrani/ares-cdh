@@ -15,12 +15,39 @@ namespace ares {
     // after a subsystem reset, or reset_all() after a full system restart.
     class TcParser { 
         public:
+        /// @brief Constructs a parser with all per-APID sequence state cleared.
+        ///
+        /// Equivalent to calling reset_all() before first use.
         explicit TcParser();
         
+        /// @brief Parses a raw byte buffer into a validated CCSDS TC packet.
+        ///
+        /// Runs the full validation pipeline: length, version, packet type,
+        /// sequence flags, CRC, and sequence integrity. Each step must pass
+        /// before the next runs. Returns the first error encountered.
+        ///
+        /// @param buffer  Pointer to raw packet bytes. Must remain valid for
+        ///                the lifetime of the returned TcPacket.
+        /// @param length  Number of bytes in buffer. Must be >= 9.
+        ///
+        /// @return Ok(TcPacket) if all validations pass.
+        ///         Err(ParseError) describing the first failed validation.
+        ///
+        /// @note No dynamic allocation occurs during parsing.
         Result<TcPacket> parse(const Byte* buffer, U16 length);
 
-        // Precondition: apid < MAX_APIDS
+        /// @brief Clears stored sequence state for a single application process identifier.
+        ///
+        /// Use after a subsystem reset affecting only that APID so the next packet
+        /// for that APID is accepted without SEQUENCE_REPLAY.
+        ///
+        /// @param apid  CCSDS APID in range [0, 2048). Behaviour is undefined if
+        ///              apid is out of range.
         void reset_sequence(U16 apid);
+
+        /// @brief Clears all per-APID sequence counters.
+        ///
+        /// Use after a full system restart so no APID carries stale sequence history.
         void reset_all();
         
         private:
@@ -32,6 +59,7 @@ namespace ares {
             Result<void>          validate_length(const Byte* buffer, U16 length);
             Result<void>          validate_version(const Byte* buffer);
             Result<void>          validate_packet_type(const Byte* buffer);
+            Result<void>          validate_sequence_flags(const Byte* buffer);
             Result<void>          validate_crc(const Byte* buffer, U16 length);
             Result<PrimaryHeader> extract_header(const Byte* buffer);
             Result<void>          validate_sequence(const PrimaryHeader& header);

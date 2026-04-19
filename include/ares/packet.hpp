@@ -15,6 +15,13 @@ namespace ares {
         UNSEGMENTED = 0b11
     };
 
+    // CCSDS telecommand primary header:
+    // Byte 0: [version: 3][packet_type: 1][has_secondary: 1][apid high: 3]
+    // Byte 1: [apid low: 8]
+    // Byte 2: [seq_flags: 2][seq_count high: 6]
+    // Byte 3: [seq_count low: 8]
+    // Byte 4: [data_length high: 8]
+    // Byte 5: [data_length low: 8]
     struct PrimaryHeader {
         U8 version;                   // 3 bits extracted - valid value is always 1
         PacketType packet_type;       // 1 bit

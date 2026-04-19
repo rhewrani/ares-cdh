@@ -13,6 +13,7 @@ namespace ares {
         SEQUENCE_REPLAY,
         INVALID_APID,
         MALFORMED_LENGTH,
+        SEQUENCE_NOT_SUPPORTED,
     };
 
     template <typename T>

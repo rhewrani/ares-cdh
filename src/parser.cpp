@@ -44,6 +44,12 @@ namespace ares {
         return crc;
     }
 
+    Result<void> TcParser::validate_sequence_flags(const Byte* buffer) {
+        const U8 sequence_flags = static_cast<U8>((buffer[2] >> 6) & 0x03);
+        if (sequence_flags != static_cast<U8>(SequenceFlags::UNSEGMENTED)) return Result<void>::err(ParseError::SEQUENCE_NOT_SUPPORTED);
+        return Result<void>::ok();
+    }
+
     Result<void> TcParser::validate_crc(const Byte* buffer, U16 length) {
         U16 calculated_crc = compute_crc16(buffer, length - 2);
         U16 received_crc = extract_crc(buffer, length);
@@ -107,6 +113,9 @@ namespace ares {
             return Result<TcPacket>::err(r.error());
 
         if (auto r = validate_packet_type(buffer); r.is_err())
+            return Result<TcPacket>::err(r.error());
+
+        if (auto r = validate_sequence_flags(buffer); r.is_err())
             return Result<TcPacket>::err(r.error());
 
         if (auto r = validate_crc(buffer, length); r.is_err())

@@ -3,13 +3,16 @@
 #include "catch_amalgamated.hpp"
 #include <array>
 
+/*
+*
+*  Byte 0-5:   primary header      (6 bytes)
+*  Byte 6:     payload             (1 byte)  
+*  Byte 7-8:   CRC (optional)      (2 bytes)
+*  total:      9 bytes
+*
+*/
+
 std::array<ares::Byte, 9> make_valid_packet(ares::U16 apid, ares::U16 sequence_count, ares::U8 payload_byte) {
-    /*
-    Byte 0-5:   primary header      (6 bytes)
-    Byte 6:     payload             (1 byte)  
-    Byte 7-8:   CRC (optional)      (2 bytes)
-    total:      9 bytes
-    */
     std::array<ares::Byte, 9> packet{};
 
     // Primary header
@@ -90,6 +93,18 @@ TEST_CASE("Valid header with packet type bit set to 0 is invalid") {
     auto result = parser.parse(buffer.data(), static_cast<ares::U16>(buffer.size()));
     REQUIRE(result.is_err());
     REQUIRE(result.error() == ares::ParseError::INVALID_PACKET_TYPE);
+}
+
+TEST_CASE("Valid header with sequence flags set to other flag is invalid") {
+    ares::TcParser parser;
+    std::array<ares::Byte, 9> buffer = make_valid_packet(0x0001, 0x0000, 0x00);
+    buffer[2] = (buffer[2] & 0x3F) | (0x02 << 6);
+    ares::U16 crc = ares::compute_crc16(buffer.data(), 7);
+    buffer[7] = static_cast<ares::Byte>(crc >> 8);
+    buffer[8] = static_cast<ares::Byte>(crc & 0xFF);
+    auto result = parser.parse(buffer.data(), static_cast<ares::U16>(buffer.size()));
+    REQUIRE(result.is_err());
+    REQUIRE(result.error() == ares::ParseError::SEQUENCE_NOT_SUPPORTED);
 }
 
 TEST_CASE("Valid packet with wrong CRC fails CRC check") {
@@ -194,12 +209,3 @@ TEST_CASE("reset_all clears state for all APIDs") {
     REQUIRE(result3.is_ok());
     REQUIRE(result4.is_ok());
 }
-
-/*
-Byte 0:  [version: 3][packet_type: 1][has_secondary: 1][apid high: 3]
-Byte 1:  [apid low: 8]
-Byte 2:  [seq_flags: 2][seq_count high: 6]
-Byte 3:  [seq_count low: 8]
-Byte 4:  [data_length high: 8]
-Byte 5:  [data_length low: 8]
-*/
