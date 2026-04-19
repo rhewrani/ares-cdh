@@ -105,7 +105,7 @@ executed.
 ## Building
 
 ```bash
-git clone https://github.com/you/ares_cdh
+git clone https://github.com/rhewrani/ares-cdh
 cd ares_cdh
 mkdir build && cd build
 cmake ..
@@ -135,7 +135,7 @@ CMakeLists.txt:
 include(FetchContent)
 FetchContent_Declare(
     ares_cdh
-    GIT_REPOSITORY https://github.com/rhewrani/ares_cdh
+    GIT_REPOSITORY https://github.com/rhewrani/ares-cdh
     GIT_TAG        main
 )
 FetchContent_MakeAvailable(ares_cdh)
